@@ -2,7 +2,6 @@
     Set-PSDebug -Off
     $Encode_Only = $True #Sets output to only list items needing encode in final csv. If false all items will be added to the CSV regardless if encode will take place
     $rootencode = "D:\" #where you want to monitor video files for encode
-    Set-Location $rootencode # set directory of root folder for monitored videos
     $alldirectories = $False # Set to false if you do not wish to scan the entire disk
     $directoriesCSV = "$rootencode\Anime\,$rootencode\TV\,$rootencode\Movies\" # CSV of all directories you want scanned
     $EncodeAfterScan = $True #Set this value to true if you would like to becin encoding after contents.csv is generated
@@ -65,6 +64,10 @@
             Write-Progress -Activity "Encoding: $step/$steps" -Status "$filename" -Completed
         }
     }
+# End Fnctions
+
+# Start Scanning
+Set-Location $rootencode # set directory of root folder for monitored videos
 
 If ($TestBool -eq $True){$TestPath = $RootEncode+"\Downloads\TestFile.mkv"}
     #Generate Contents
@@ -88,8 +91,7 @@ If ($TestBool -eq $True){$TestPath = $RootEncode+"\Downloads\TestFile.mkv"}
         $step = 0
         $percent = 0
         $ffmpeg =@(
-            foreach($line in Get-Content $rootencode\contents.txt)
-                                                                                                                                                                                                        {
+            foreach($line in Get-Content $rootencode\contents.txt){
             Write-Progress -Activity $activity -Status "Progress:" -PercentComplete $percent
             
             #Check file folder and parent folder for ".skip" file to skip the encoding of these folders
