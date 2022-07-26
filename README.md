@@ -41,7 +41,11 @@ This controls if you wish to scan the entire root folder for content.
 
 ### directoriesCSV
 
->`$directoriesCSV = "$rootencode\Anime\,$rootencode\TV\,$rootencode\Movies\" `
+>`$directoriesCSV = "$rootencode\Anime\,$rootencode\TV\,$rootencode\Movies\"`
+
+or
+
+>`$directoriesCSV = "directory1,directory2,directory3"`
 
 If you want to only have power-shell scan specific folders for media, you can indicate them using CSV style formatting.
 
