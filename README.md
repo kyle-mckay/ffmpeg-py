@@ -9,6 +9,13 @@ Powershell script for how I scan media files and encode them with ffmpeg
 
 - Powershell (obviously)
 
+## Simplified Script Flow
+
+1. Powershell begins scanning all indicated directories. Each file and folder under that path is added to contents.txt
+1. Powershell will begin scanning through each file individually, skipping folders, and and attempts to determine current bitrate, resolution and calculate if the file requires encoding when compared to presets. All files scanned are added to `contents.csv` with the scanned data based on configuration.
+1. When `contents.csv` is generated powershell will begin going through each line. If encoding is required it will begin the encode operation by passing through information to ffmpeg.
+1. When the file encode is complete, it will delete the source file and move the new file to the same directory with the same naming convention.
+
 ## Config In Detail
 
 |Variable Name|Type|Default/Example|Description/Comments|
@@ -27,10 +34,3 @@ Powershell script for how I scan media files and encode them with ffmpeg
 |`$AppendLog`|Boolean|`=  $True`|If `$False` then when a new encoding session begins, the contents of `Encode_Log.txt` are cleared. If `$True` then the contents of said text file will append until cleared manually.|
 |`$DeleteContents`|Boolean|`=  $True`|If `$False` then the `contents.txt` file generated at scanning will not be deleted after `contents.csv` is created. If `$True` then `contents.txt` will be deleted after `contents.csv` is created.|
 |`$EncodeAfterScan`|Boolean|`=  $True`|If `$False` then once the CSV is created the script skips the encoding process entirely. If `$True` then the script will encode all identified files after the CSV is generated.|
-
-## Simplified Script Flow
-
-1. Powershell begins scanning all indicated directories. Each file and folder under that path is added to contents.txt
-1. Powershell will begin scanning through each file individually, skipping folders, and and attempts to determine current bitrate, resolution and calculate if the file requires encoding when compared to presets. All files scanned are added to `contents.csv` with the scanned data based on configuration.
-1. When `contents.csv` is generated powershell will begin going through each line. If encoding is required it will begin the encode operation by passing through information to ffmpeg.
-1. When the file encode is complete, it will delete the source file and move the new file to the same directory with the same naming convention.
