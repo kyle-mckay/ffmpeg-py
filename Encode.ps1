@@ -2,8 +2,8 @@
     Set-PSDebug -Off
     $Encode_Only = $True #Sets output to only list items needing encode in final csv. If false all items will be added to the CSV regardless if encode will take place
     $rootencode = "D:\" #where you want to monitor video files for encode
-    $alldirectories = $False # Set to false if you do not wish to scan the entire disk
-    $directoriesCSV = "$rootencode\Anime\,$rootencode\TV\,$rootencode\Movies\" # CSV of all directories you want scanned
+    $alldirectories = $True # Set to false if you do not wish to scan the entire disk
+    $directoriesCSV = $rootencode+"Anime\,"+$rootencode+"TV\,"+$rootencode+"Movies\" # CSV of all directories you want scanned
     $EncodeAfterScan = $True #Set this value to true if you would like to becin encoding after contents.csv is generated
     $DeleteCSV = $False #Set this value to true if you wish to delete contents.csv after encoding compelte
     $TestBool = $False #Enable this if you wish to run the current settings using a single file
@@ -69,7 +69,8 @@
 # Start Scanning
 Set-Location $rootencode # set directory of root folder for monitored videos
 
-If ($TestBool -eq $True){$TestPath = $RootEncode+"\Downloads\TestFile.mkv"}
+    If ($TestBool -eq $True){$TestPath = $RootEncode+"\Downloads\TestFile.mkv"}
+
     #Generate Contents
         #Generate Contents Lists and repeat based on number of directories
         out-file $rootencode\contents.txt #create empty contents file
@@ -92,65 +93,73 @@ If ($TestBool -eq $True){$TestPath = $RootEncode+"\Downloads\TestFile.mkv"}
         $percent = 0
         $ffmpeg =@(
             foreach($line in Get-Content $rootencode\contents.txt){
-            Write-Progress -Activity $activity -Status "Progress:" -PercentComplete $percent
-            
-            #Check file folder and parent folder for ".skip" file to skip the encoding of these folders
-            $filepath = Split-Path -Path $line
-            $filepath = $filepath + "\*.skip"
-            $parentpath = Split-path -Parent $filepath
-            $parentpath = $parentpath + "\*.skip"
-            #If skip file not found in either path then get video metadata
-            $ScanFile = $True # Reset ScanFile for each item in contents.txt
+                Write-Progress -Activity $activity -Status "Progress:" -PercentComplete $percent
+                
+                #Check file folder and parent folder for ".skip" file to skip the encoding of these folders
+                $filepath = Split-Path -Path $line
+                $spath = $filepath + "\.skip"
+                $parentpath = Split-path -Parent $line
+                $pspath = $parentpath + "\.skip"
+                #If skip file not found in either path then get video metadata
+                $ScanFile = $True # Reset ScanFile for each item in contents.txt
 
-            If ($TestBool = $False) {
-                If (!(Test-Path $filepath) -and !(Test-Path $parentpath)) {$ScanFile = $False}
-            } # Checks if TestMode is enabled, if not then scans for skip file
-            
-            If ($ScanFile = $True) {
-            #Video Metadata
-                #$bits = ffprobe "$line" -v error -select_streams v:0  -show_entries stream_tags=BPS -of default=noprint_wrappers=1:nokey=1 #get the video kbps via tag (very accurate)
-                $bits = ffprobe "$line" -v quiet -show_entries format=bit_rate -of default=noprint_wrappers=1:nokey=1 #if tag blank then get via format (less accurate)
-                $height = ffprobe "$line"  -v quiet -select_streams v:0  -show_entries stream=height -of default=noprint_wrappers=1:nokey=1 # get video width
-            
-                #logic for bps based on height
-                    if ([int]$height -le 480) {
-                        $kbps = 1000
-                        $theight = "640x480"
-                    }elseif ([int]$height -ge 1000) {
-                        $kbps = 2500
-                        $theight = "1920x1080"
-                    }else {
-                        $kbps = 2000
-                        $theight = "1280x720"
-                    }
-            
-                #check if encoding needed
-                    $scale_bits = [int]$kbps*1000
-                    If($TestBool = $True) {$encode = $True} ElseIf ([int]$bits -gt $scale_bits*1.3) {$encode = $True}else {$encode = $False} #Check if bitrate is greater than target kbp/s if so mark for encode
-            
-                #Add data to array
-                    If ($TestBool = $True) {Encode_CSV} #Encode test path even if it doesnt need it
-                    ElseIf ($Encode_Only -eq $True) {
-                        #If encode only is true, only import items needing encode into csv
-                        If ($encode -eq $True) {Encode_CSV}
-                    }Else {
-                        #If encode only is false, import all items into csv
-                        Encode_CSV
-                    }
+                If ($TestBool -eq $False) {
+                    If ((Test-Path -Path $spath) -and (Test-Path -Path $pspath)) {$ScanFile = $False}
+                } # Checks if TestMode is enabled, if not then scans for skip file. If found scan of file is skipped
+                If (Test-Path -Path $line -PathType Container) {$ScanFile = $False} # Checks if path is to folder
+                If ($ScanFile -eq $True) {
+                #Video Metadata
+                    #$bits = ffprobe "$line" -v error -select_streams v:0  -show_entries stream_tags=BPS -of default=noprint_wrappers=1:nokey=1 #get the video kbps via tag (very accurate)
+                    $bits = ffprobe "$line" -v quiet -show_entries format=bit_rate -of default=noprint_wrappers=1:nokey=1 #if tag blank then get via format (less accurate)
+                    $height = ffprobe "$line"  -v quiet -select_streams v:0  -show_entries stream=height -of default=noprint_wrappers=1:nokey=1 # get video width
+                
+                    #logic for bps based on height
+                        if ([int]$height -le 480) {
+                            $kbps = 1000
+                            $theight = "640x480"
+                        }elseif ([int]$height -ge 1000) {
+                            $kbps = 2500
+                            $theight = "1920x1080"
+                        }else {
+                            $kbps = 2000
+                            $theight = "1280x720"
+                        }
+                
+                    #check if encoding needed
+                        $scale_bits = [int]$kbps*1000
+                        If($TestBool -eq $True) {$encode = $True} ElseIf ([int]$bits -gt $scale_bits*1.3) {$encode = $True} else {
+                            $encode = $False
+                            Write-Host "Encoding determined not needed for path - $line"
+                        } #Check if bitrate is greater than target kbp/s if so mark for encode
+                
+                    #Add data to array
+                        If ($TestBool -eq $True) {
+                            Encode_CSV
+                            Write-Host "Adding to CSV as TestBool is True $line"
+                        } #Encode test path even if it doesnt need it
+                        ElseIf ($Encode_Only -eq $True) {
+                            #If encode only is true, only import items needing encode into csv
+                            If ($encode -eq $True) {
+                                Encode_CSV
+                                Write-Host "Adding to CSV as Encode_Only is True - $line"
+                            }
+                        }Else {
+                            #If encode only is false, import all items into csv
+                            Encode_CSV
+                            Write-Host "Adding to CSV as Encode_Only is False - $line"
+                        }
 
+                }Else {
+                Write-Host "Skip file exists or path is folder, will not be added to CSV. Path - $line"
+                }
+                $step++
+                $percent = ($step/$steps)*100
             }
-            else
-            {
-            Write-Host "Skip file exists, will not be added. Path - " Split-path -Parent $filepath
-            }
-            $step++
-            $percent = ($step/$steps)*100
-        }
         )
     #Export CSV
         $ffmpeg | Export-Csv -Path $rootencode\contents.csv #export array to csv
         Write-Progress -Activity $activity -Status "Ready" -Completed
-        remove-item $rootencode\contents.txt
+        #remove-item $rootencode\contents.txt
         #Import-Csv .\contents.csv | Out-GridView # display csv #view CSV when complete
 If ($EncodeAfterScan -eq $True) {BeginEncode} #Begin video encode if turned on in config
 If ($DeleteCSV -eq $True) {remove-item $rootencode\contents.csv} #Remove contents csv if marked true in config
