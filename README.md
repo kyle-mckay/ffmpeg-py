@@ -13,11 +13,12 @@ Powershell script for how I scan media files and encode them with ffmpeg
 
 |Variable Name|Type|Default/Example|Description/Comments|
 |--|--|--|--|
-|`Set-PSDebug -Off`| cmdlet |Not commented out|Turns script debugging features on and off, sets the trace level, and toggles strict mode. If you want on, comment out this line|
+|`Set-PSDebug -Off`| cmdlet |Not commented out|Turns script debugging features off, sets the trace level, and toggles strict mode.|
+|`$VerbosePreference`|String|`= "Continue"`|Enables the `Write-Verbose` messages in the console.|
 |`$TestBool`|Boolean|`= $False`|Enables or disables test mode. Test mode only scans and encodes a single path defined in `$TestPath`|
 |`$TestPath`|String|`= "D:\Testfile.mkv"`|Path to file you want to test the encoder on|
 |`$rootencode`|String|`= "D:\"`|This is the root file path you want power-shell to begin scanning for media if you are wanting to scan all child items of this directory. *This becomes very important if you have `$alldirectories` set to `$False`*|
-|`$ExportedDataPath`|String|`=  $rootencode`|
+|`$ExportedDataPath`|String|`=  $scriptPath`|Set the path where you want the exported files to be generated|
 |`$alldirectories`|Boolean|`=  $False`|This controls if you wish to scan the entire root folder specified in `$rootencode` for content. If `$True`, all files, folders and subfolders will be subject to at least a scan attempt. If `$False`, only the folders indicated in `$directoriesCSV` will be subject to a recursive scan.|
 |`$directoriesCSV`|String|`= "D:\Anime\,D:\TV\,D:\Movies\"`|If you want to only have power-shell scan specific folders for media, you can indicate all paths in this variable using CSV style formatting.|
 |`$DisableStatus`|Boolean|`= $True` |Set to true if you wish to disable the calculating and displaying of status/progress bars in the script (can increase performance)|
