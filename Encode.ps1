@@ -2,8 +2,8 @@
     Set-PSDebug -Off
     $Encode_Only = $True #Sets output to only list items needing encode in final csv. If false all items will be added to the CSV regardless if encode will take place
     $rootencode = "D:\" #where you want to monitor video files for encode
-    $alldirectories = $True # Set to false if you do not wish to scan the entire disk
-    $directoriesCSV = $rootencode+"Anime\,"+$rootencode+"TV\,"+$rootencode+"Movies\" # CSV of all directories you want scanned
+    $alldirectories = $False # Set to false if you do not wish to scan the entire disk
+    $directoriesCSV = "Anime\,TV\,Movies\" # CSV of all directories you want scanned
     $EncodeAfterScan = $True #Set this value to true if you would like to becin encoding after contents.csv is generated
     $DeleteCSV = $False #Set this value to true if you wish to delete contents.csv after encoding compelte
     $TestBool = $False #Enable this if you wish to run the current settings using a single file
@@ -78,8 +78,8 @@ Set-Location $rootencode # set directory of root folder for monitored videos
             $TestPath | Add-Content $rootencode\contents.txt # If testmode active, export single path to contents.txt 
             #Otherwise follow default scan export
         }ElseIf ($alldirectories -eq $False){
-            $directoriesCSV | ForEach-Object {
-                Get-ChildItem -Path $gc -Recurse -Include "*" | ForEach-Object {$_.FullName} | Write-Output | Add-Content $rootencode\contents.txt
+            $directoriesCSV.Split(",") | ForEach-Object {
+                Get-ChildItem -Path $rootencode$_ -Recurse -Include "*" | ForEach-Object {$_.FullName} | Write-Output | Add-Content $rootencode\contents.txt
             }
         }Else{Get-ChildItem -Path $rootencode -Recurse -Include "*" | ForEach-Object {$_.FullName} | Write-Output | Add-Content $rootencode\contents.txt}
         
