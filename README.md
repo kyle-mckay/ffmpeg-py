@@ -1,71 +1,28 @@
 
 # ffmpreg
+
 Powershell script for how I scan media files and encode them with ffmpeg
 
 ## Requirements
+
 - FFMPEG needs to be installed and configured to work with CLI in powershell
+
 - Powershell (obviously)
 
 ## Config In Detail
 
-### Set-PSDebug
-
->`Set-PSDebug -Off`
-
-Turns script debugging features on and off, sets the trace level, and toggles strict mode. If you want on, comment out this line
-
-### Encode_Only 
-
->`$Encode_Only = $True`
-
-When this is `$True`, only items identified as "needing encode" as per the `Detect Medtadata > Video Metadata > Check if encoding needed` section. If `$False` then all items will be added to the CSV regardless if encoding will take place for the file or not.
-
->This does not change whether or not the file **will** be encoded, only if it is logged in the generated CSV file
-
-### rootencode
-
->`$rootencode = "D:\" `
-
-This is the root file path you want power-shell to begin scanning for media.
-
-> This becomes very important if you have `$alldirectories` set to `$False`
-
-### alldirectories 
-
->`$alldirectories = $False `
-
-This controls if you wish to scan the entire root folder for content.
-
-- If `$True`, all files, folders and subfolders will be subject to at least a scan attempt
-- If `$False`, only the folders indicated in `$directoriesCSV` will be subject to a recursive scan.
-
-### directoriesCSV
-
->`$directoriesCSV = "$rootencode\Anime\,$rootencode\TV\,$rootencode\Movies\"`
-
-or
-
->`$directoriesCSV = "directory1,directory2,directory3"`
-
-If you want to only have power-shell scan specific folders for media, you can indicate them using CSV style formatting.
-
-### EncodeAfterScan 
-
->`$EncodeAfterScan = $True `
-
-- If `$False` then once the CSV is created the script skips the encoding process entirely.
-- If `$True` then the script will encode after the CSV is generated
-
-### DeleteCSV 
-
->`$DeleteCSV = $False `
-
-- If `$False` then `contents.csv` will be deleted after the script is finished.
-- If `$True` then `contents.csv` will **not** be deleted after the script is finished. Instead the next time it runs it will be written over.
-
-### TestBool 
-
->`$TestBool = $False `
-
-- If `$False` the script will scan all specified locations for files that need encoding
-- If `$True` the script will scan only the path indicated in `$TestPath` and nothing else
+|Variable Name|Type|Default/Example|Description/Comments|
+|--|--|--|--|
+|`Set-PSDebug -Off`| cmdlet |Not commented out|Turns script debugging features on and off, sets the trace level, and toggles strict mode. If you want on, comment out this line|
+|`$TestBool`|Boolean|`= $False`|Enables or disables test mode. Test mode only scans and encodes a single path defined in `$TestPath`|
+|`$TestPath`|String|`= "D:\Testfile.mkv"`|Path to file you want to test the encoder on|
+|`$rootencode`|String|`= "D:\"`|This is the root file path you want power-shell to begin scanning for media if you are wanting to scan all child items of this directory. *This becomes very important if you have `$alldirectories` set to `$False`*|
+|`$ExportedDataPath`|String|`=  $rootencode`|
+|`$alldirectories`|Boolean|`=  $False`|This controls if you wish to scan the entire root folder specified in `$rootencode` for content. If `$True`, all files, folders and subfolders will be subject to at least a scan attempt. If `$False`, only the folders indicated in `$directoriesCSV` will be subject to a recursive scan.|
+|`$directoriesCSV`|String|`= "D:\Anime\,D:\TV\,D:\Movies\"`|If you want to only have power-shell scan specific folders for media, you can indicate all paths in this variable using CSV style formatting.|
+|`$DisableStatus`|Boolean|`= $True` |**Pending** - # Set to true if you wish to disable the calculating and displaying of status/progress bars in the script (can increase processing time)|
+|`$EncodeOnly`|Boolean|`=  $True`|When this is `$True`, only items identified as "needing encode" as per the `Detect Medtadata > Video Metadata > Check if encoding needed` section. If `$False` then all items will be added to the CSV regardless if encoding will take place for the file or not. *This does not change whether or not the file **will** be encoded, only if it is logged in the generated CSV file*|
+|`$DeleteCSV`|Boolean|`=  $False`|If `$False` then `contents.csv` will be deleted after the script is finished. If `$True` then `contents.csv` will **not** be deleted after the script is finished. Instead the next time it runs it will be written over.|
+|`$AppendLog`|Boolean|`=  $True`|If `$False` then when a new encoding session begins, the contents of `Encode_Log.txt` are cleared. If `$True` then the contents of said text file will append until cleared manually.|
+|`$DeleteContents`|Boolean|`=  $True`|If `$False` then the `contents.txt` file generated at scanning will not be deleted after `contents.csv` is created. If `$True` then `contents.txt` will be deleted after `contents.csv` is created.|
+|`$EncodeAfterScan`|Boolean|`=  $True`|If `$False` then once the CSV is created the script skips the encoding process entirely. If `$True` then the script will encode all identified files after the CSV is generated.|

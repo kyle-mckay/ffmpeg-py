@@ -1,16 +1,24 @@
 #config
+    # Initial Config
     Set-PSDebug -Off
-    $Encode_Only = $True #Sets output to only list items needing encode in final csv. If false all items will be added to the CSV regardless if encode will take place
-    $rootencode = "D:\" #where you want to monitor video files for encode
+    $TestBool = $False # Enable this if you wish to run the current settings using a single file
+    $TestPath = $RootEncode+"\Downloads\TestFile.mkv" # Path for file to test encode on
+    $rootencode = "D:\" # Where you want to monitor video files for encode
+    $ExportedDataPath = $rootencode # Where you want your exported data to be stored
     $alldirectories = $False # Set to false if you do not wish to scan the entire disk
-    $directoriesCSV = "Anime\,TV\,Movies\" # CSV of all directories you want scanned
-    $EncodeAfterScan = $True #Set this value to true if you would like to becin encoding after contents.csv is generated
-    $DeleteCSV = $False #Set this value to true if you wish to delete contents.csv after encoding compelte
-    $TestBool = $False #Enable this if you wish to run the current settings using a single file
+    $directoriesCSV = "D:\Anime\,D:\TV\,D:\Movies\" # CSV of all directories you want scanned
+    $DisableStatus = $False # Set to true if you wish to disable the calculating and displaying of status/progress bars in the script (can increase processing time)
+    # Exported Data
+    $EncodeOnly = $True # Sets output to only list items needing encode in final csv. If false all items will be added to the CSV regardless if encode will take place
+    $DeleteCSV = $False # Set this value to true if you wish to delete contents.csv after encoding compelte
+    $AppendLog = $True # Set this to true if you wish to append encode log data as new lines instead of starting fresh with each execution
+    $DeleteContents = $True # Set this to true if you wish to keep the contents.txt file generated during initial scan
+    # Encode Config
+    $EncodeAfterScan = $True # Set this value to true if you would like to becin encoding after contents.csv is generated
 
 #Functions
     
-    Function Encode_CSV {
+    Function EncodeCSV {
         # Adds current scanned item to Encode.csv if it meets the requirements
         [pscustomobject]@{
             Bits_Ps = $bits
@@ -20,11 +28,11 @@
             Encode = $encode
             Path = $line
         }
-
-        }
+    }
     # Begins the encoding process of all items marked "Encode = TRUE" in contents.csv
     Function BeginEncode {
         #Begin encoding
+        If ($AppendLog -eq $False) {Clear-Content -Path $ExportedDataPath\encode_log.txt} # Clears log file at start of encode if true, otherwise appends continuously
         $steps = (get-content $rootencode\contents.csv).length
         $step = 1
 
@@ -55,7 +63,7 @@
                     #Populate log of encoded files
                     $ts = Get-Date -Format "yyyy-MM-dd HH:mm"
                     $log = $ts+" "+$basename+" encoded in "+$($_.T_height)+"p at "+($($_.T_Bits_Ps)/1000)+"kbp/s | Originally "+$($_.Bits_Ps)/1000+"kbp/s"
-                    write-output $log | add-content .\encode_log.txt
+                    write-output $log | add-content $ExportedDataPath\encode_log.txt
                     $step++
                     Write-Output "Complete"
                 }
@@ -69,30 +77,29 @@
 # Start Scanning
 Set-Location $rootencode # set directory of root folder for monitored videos
 
-    If ($TestBool -eq $True){$TestPath = $RootEncode+"\Downloads\TestFile.mkv"}
-
     #Generate Contents
         #Generate Contents Lists and repeat based on number of directories
-        out-file $rootencode\contents.txt #create empty contents file
+
+        out-file $ExportedDataPath\contents.txt #create empty contents file
         If ($TestBool -eq $True){
-            $TestPath | Add-Content $rootencode\contents.txt # If testmode active, export single path to contents.txt 
+            $TestPath | Add-Content $ExportedDataPath\contents.txt # If testmode active, export single path to contents.txt 
             #Otherwise follow default scan export
         }ElseIf ($alldirectories -eq $False){
             $directoriesCSV.Split(",") | ForEach-Object {
-                Get-ChildItem -Path $rootencode$_ -Recurse -Include "*" | ForEach-Object {$_.FullName} | Write-Output | Add-Content $rootencode\contents.txt
+                Get-ChildItem -Path $_ -Recurse -Include "*" | ForEach-Object {$_.FullName} | Write-Output | Add-Content $ExportedDataPath\contents.txt
             }
-        }Else{Get-ChildItem -Path $rootencode -Recurse -Include "*" | ForEach-Object {$_.FullName} | Write-Output | Add-Content $rootencode\contents.txt}
+        }Else{Get-ChildItem -Path $rootencode -Recurse -Include "*" | ForEach-Object {$_.FullName} | Write-Output | Add-Content $ExportedDataPath\contents.txt}
         
     #Detect Metadata
         #Begin scanning files
         $activity = "Collecting Metadata from files"
 
         #Start grabbing metadata based on contents
-        $steps = (get-content $rootencode\contents.txt).length
+        $steps = (get-content $ExportedDataPath\contents.txt).length
         $step = 0
         $percent = 0
         $ffmpeg =@(
-            foreach($line in Get-Content $rootencode\contents.txt){
+            foreach($line in Get-Content $ExportedDataPath\contents.txt){
                 Write-Progress -Activity $activity -Status "Progress:" -PercentComplete $percent
                 
                 #Check file folder and parent folder for ".skip" file to skip the encoding of these folders
@@ -134,18 +141,18 @@ Set-Location $rootencode # set directory of root folder for monitored videos
                 
                     #Add data to array
                         If ($TestBool -eq $True) {
-                            Encode_CSV
+                            EncodeCSV
                             Write-Host "Adding to CSV as TestBool is True $line"
                         } #Encode test path even if it doesnt need it
-                        ElseIf ($Encode_Only -eq $True) {
+                        ElseIf ($EncodeOnly -eq $True) {
                             #If encode only is true, only import items needing encode into csv
                             If ($encode -eq $True) {
-                                Encode_CSV
+                                EncodeCSV
                                 Write-Host "Adding to CSV as Encode_Only is True - $line"
                             }
                         }Else {
                             #If encode only is false, import all items into csv
-                            Encode_CSV
+                            EncodeCSV
                             Write-Host "Adding to CSV as Encode_Only is False - $line"
                         }
 
@@ -157,9 +164,8 @@ Set-Location $rootencode # set directory of root folder for monitored videos
             }
         )
     #Export CSV
-        $ffmpeg | Export-Csv -Path $rootencode\contents.csv #export array to csv
+        $ffmpeg | Export-Csv -Path $ExportedDataPath\contents.csv #export array to csv
         Write-Progress -Activity $activity -Status "Ready" -Completed
-        #remove-item $rootencode\contents.txt
-        #Import-Csv .\contents.csv | Out-GridView # display csv #view CSV when complete
+        If ($DeleteContents -eq $True) {remove-item $ExportedDataPath\contents.txt}
 If ($EncodeAfterScan -eq $True) {BeginEncode} #Begin video encode if turned on in config
-If ($DeleteCSV -eq $True) {remove-item $rootencode\contents.csv} #Remove contents csv if marked true in config
+If ($DeleteCSV -eq $True) {remove-item $ExportedDataPath\contents.csv} #Remove contents csv if marked true in config
