@@ -7,7 +7,7 @@
     $ExportedDataPath = $rootencode # Where you want your exported data to be stored
     $alldirectories = $False # Set to false if you do not wish to scan the entire disk
     $directoriesCSV = "D:\Anime\,D:\TV\,D:\Movies\" # CSV of all directories you want scanned
-    $DisableStatus = $False # Set to true if you wish to disable the calculating and displaying of status/progress bars in the script (can increase processing time)
+    $DisableStatus = $True # Set to true if you wish to disable the calculating and displaying of status/progress bars in the script (can increase performance)
     # Exported Data
     $EncodeOnly = $True # Sets output to only list items needing encode in final csv. If false all items will be added to the CSV regardless if encode will take place
     $DeleteCSV = $False # Set this value to true if you wish to delete contents.csv after encoding compelte
@@ -33,20 +33,29 @@
     Function BeginEncode {
         #Begin encoding
         If ($AppendLog -eq $False) {Clear-Content -Path $ExportedDataPath\encode_log.txt} # Clears log file at start of encode if true, otherwise appends continuously
-        $steps = (get-content $rootencode\contents.csv).length
-        $step = 1
+        If ($DisableStatus -eq $False) {
+            $steps = (get-content $rootencode\contents.csv).length
+            $step = 1
+        }
+        If ($DisableStatus -eq $False) {
+
+        }
 
         #Loop through contents.csv and encode each file identified
         Import-Csv .\contents.csv | ForEach-Object {
             if ($($_.encode) -eq "TRUE") {
-                $percent = ($step/$steps)*100
+                If ($DisableStatus -eq $False) {
+                    $percent = ($step/$steps)*100
+                }
+                
                 #Collect file details
                     $filename = Get-ChildItem $($_.path)
                     $basename = $filename.BaseName #to get name only
                     $outputpath = "$rootencode\Encode\"+$basename+".mkv"
                     $inputContainer = split-path -path $($_.path)
-                    Write-Progress -Activity "Encoding: $step/$steps" -Status "$filename" -PercentComplete $percent
+                    If ($DisableStatus -eq $False) {Write-Progress -Activity "Encoding: $step/$steps" -Status "$filename" -PercentComplete $percent}
                     Write-Output "Working $filename"
+                    
                 
                 #Create new encode
                     ffmpeg -i "$($_.path)" -b $($_.T_Bits_Ps) -maxrate $($_.T_Bits_Ps) -minrate $($_.T_Bits_Ps) -ab 64k -vcodec libx264 -acodec aac -strict 2 -ac 2 -ar 44100 -s $($_.T_height) -map 0 -y -threads 2 -v quiet -stats $outputpath
@@ -64,12 +73,16 @@
                     $ts = Get-Date -Format "yyyy-MM-dd HH:mm"
                     $log = $ts+" "+$basename+" encoded in "+$($_.T_height)+"p at "+($($_.T_Bits_Ps)/1000)+"kbp/s | Originally "+$($_.Bits_Ps)/1000+"kbp/s"
                     write-output $log | add-content $ExportedDataPath\encode_log.txt
-                    $step++
+                    If ($DisableStatus -eq $False) {
+                        $step++
+                    }
+                    
                     Write-Output "Complete"
                 }
     
             }
-            Write-Progress -Activity "Encoding: $step/$steps" -Status "$filename" -Completed
+            If ($DisableStatus -eq $False) {Write-Progress -Activity "Encoding: $step/$steps" -Status "$filename" -Completed}
+            
         }
     }
 # End Fnctions
@@ -100,8 +113,8 @@ Set-Location $rootencode # set directory of root folder for monitored videos
         $percent = 0
         $ffmpeg =@(
             foreach($line in Get-Content $ExportedDataPath\contents.txt){
-                Write-Progress -Activity $activity -Status "Progress:" -PercentComplete $percent
-                
+                If ($DisableStatus -eq $False) {Write-Progress -Activity $activity -Status "Progress:" -PercentComplete $percent}
+                                
                 #Check file folder and parent folder for ".skip" file to skip the encoding of these folders
                 $filepath = Split-Path -Path $line
                 $spath = $filepath + "\.skip"
@@ -165,7 +178,7 @@ Set-Location $rootencode # set directory of root folder for monitored videos
         )
     #Export CSV
         $ffmpeg | Export-Csv -Path $ExportedDataPath\contents.csv #export array to csv
-        Write-Progress -Activity $activity -Status "Ready" -Completed
+        If ($DisableStatus -eq $False) {Write-Progress -Activity $activity -Status "Ready" -Completed}        
         If ($DeleteContents -eq $True) {remove-item $ExportedDataPath\contents.txt}
 If ($EncodeAfterScan -eq $True) {BeginEncode} #Begin video encode if turned on in config
 If ($DeleteCSV -eq $True) {remove-item $ExportedDataPath\contents.csv} #Remove contents csv if marked true in config
