@@ -1,4 +1,12 @@
 
+# Table of Contents
+
+- [Table of Contents](#table-of-contents)
+- [ffmpreg](#ffmpreg)
+  - [Requirements](#requirements)
+  - [Simplified Script Flow](#simplified-script-flow)
+  - [Config In Detail](#config-in-detail)
+
 # ffmpreg
 
 Powershell script for how I scan media files and encode them with ffmpeg
