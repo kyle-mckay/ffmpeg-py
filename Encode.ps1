@@ -6,6 +6,7 @@ $scriptPath = split-path -parent $MyInvocation.MyCommand.Definition # Gets the p
     $TestBool = $False # Enable this if you wish to run the current settings using a single file
     $TestPath = $RootEncode+"\Downloads\TestFile.mkv" # Path for file to test encode on
     $rootencode = "D:\" # Where you want to monitor video files for encode
+    $EncodePath = "$rootencode\Encode\" # Path or folder name where you would like your encodes to be stored while being created
     $ExportedDataPath = $scriptPath # Where you want your exported data to be stored
     $alldirectories = $False # Set to false if you do not wish to scan the entire disk
     $directoriesCSV = "D:\Anime\,D:\TV\,D:\Movies\" # CSV of all directories you want scanned
@@ -16,8 +17,12 @@ $scriptPath = split-path -parent $MyInvocation.MyCommand.Definition # Gets the p
     $AppendLog = $True # Set this to true if you wish to append encode log data as new lines instead of starting fresh with each execution
     $DeleteContents = $True # Set this to true if you wish to keep the contents.txt file generated during initial scan
     # Encode Config
+    $RemoveBeforeScan = $True # Set this value if you would like to delete all old media that may be left behind in the root encoding folder
     $EncodeAfterScan = $True # Set this value to true if you would like to becin encoding after contents.csv is generated
 #Functions
+    Function RemoveOldEnc {
+        Remove-Item $EncodePath -Include *.* -Recurse
+    }
     Function EncodeCSV {
         # Adds current scanned item to Encode.csv if it meets the requirements
         [pscustomobject]@{
@@ -46,7 +51,7 @@ $scriptPath = split-path -parent $MyInvocation.MyCommand.Definition # Gets the p
                 #Collect file details
                     $filename = Get-ChildItem $($_.path)
                     $basename = $filename.BaseName #to get name only
-                    $outputpath = "$rootencode\Encode\"+$basename+".mkv"
+                    $outputpath = $EncodePath+$basename+".mkv"
                     $inputContainer = split-path -path $($_.path)
                     If ($DisableStatus -eq $False) {Write-Progress -Activity "Encoding: $step/$steps" -Status "$filename" -PercentComplete $percent}
                     Write-Verbose -Message "Working $filename"
@@ -76,6 +81,7 @@ $scriptPath = split-path -parent $MyInvocation.MyCommand.Definition # Gets the p
 # End Fnctions
 # Start Scanning
     Set-Location $rootencode # set directory of root folder for monitored videos
+    If ($RemoveBeforeScan -eq $True) {RemoveOldEnc} # Remove old encodes
     #Generate Contents
         #Generate Contents Lists and repeat based on number of directories
         out-file $ExportedDataPath\contents.txt #create empty contents file
