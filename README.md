@@ -42,5 +42,5 @@ Powershell script for how I scan media files and encode them with ffmpeg
 |`$DeleteCSV`|Boolean|`=  $False`|If `$False` then `contents.csv` will be deleted after the script is finished. If `$True` then `contents.csv` will **not** be deleted after the script is finished. Instead the next time it runs it will be written over.|
 |`$AppendLog`|Boolean|`=  $True`|If `$False` then when a new encoding session begins, the contents of `Encode_Log.txt` are cleared. If `$True` then the contents of said text file will append until cleared manually.|
 |`$DeleteContents`|Boolean|`=  $True`|If `$False` then the `contents.txt` file generated at scanning will not be deleted after `contents.csv` is created. If `$True` then `contents.txt` will be deleted after `contents.csv` is created.|
-|`$RemoveBeforeScan`|Boolean||If `$True` then  all files in `$EncodePath` are deleted prior to initiated a scan for media
+|`$RemoveBeforeScan`|Boolean|`= $True`|If `$True` then  all files in `$EncodePath` are deleted prior to initiated a scan for media
 |`$EncodeAfterScan`|Boolean|`=  $True`|If `$False` then once the CSV is created the script skips the encoding process entirely. If `$True` then the script will encode all identified files after the CSV is generated.|
