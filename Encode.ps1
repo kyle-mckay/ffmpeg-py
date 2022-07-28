@@ -26,12 +26,12 @@ $sScriptPath = split-path -parent $MyInvocation.MyCommand.Definition # Gets the 
     Function EncodeCSV {
         # Adds current scanned item to Encode.csv if it meets the requirements
         [pscustomobject]@{
-            Bits_Ps = $bits
-            height = $height
-            T_Bits_Ps = $scale_bits
+            Bits_Ps = $iBits
+            height = $iHeight
+            T_Bits_Ps = $iScaleBits
             T_height = $theight
-            Encode = $encode
-            Path = $line
+            Encode = $bEncode
+            Path = $sContentsLine
         }
     }
     # Begins the encoding process of all items marked "Encode = TRUE" in contents.csv
@@ -39,44 +39,44 @@ $sScriptPath = split-path -parent $MyInvocation.MyCommand.Definition # Gets the 
         #Begin encoding
         If ($bAppendLog -eq $False) {Clear-Content -Path $sExportedDataPath\encode_log.txt} # Clears log file at start of encode if true, otherwise appends continuously
         If ($bDisableStatus -eq $False) {
-            $steps = (get-content $sExportedDataPath\contents.csv).length
-            $step = 1
+            $iSteps = (get-content $sExportedDataPath\contents.csv).length
+            $iStep = 1
         }
         #Loop through contents.csv and encode each file identified
             Import-Csv $sExportedDataPath\contents.csv | ForEach-Object {
             if ($($_.encode) -eq "TRUE") {
                 If ($bDisableStatus -eq $False) {
-                    $percent = ($step/$steps)*100
+                    $iPercent = ($iStep/$iSteps)*100
                 }
                 #Collect file details
-                    $filename = Get-ChildItem $($_.path)
-                    $basename = $filename.BaseName #to get name only
-                    If ($bTest -eq $True) {$outputpath = $sExportedDataPath+$basename+".mkv"} Else {$outputpath = $sEncodePath+$basename+".mkv"}
+                    $sFilename = Get-ChildItem $($_.path)
+                    $sBasename = $sFilename.BaseName #to get name only
+                    If ($bTest -eq $True) {$outputpath = $sExportedDataPath+$sBasename+".mkv"} Else {$outputpath = $sEncodePath+$sBasename+".mkv"}
                     
-                    $inputContainer = split-path -path $($_.path)
-                    If ($bDisableStatus -eq $False) {Write-Progress -Activity "Encoding: $step/$steps" -Status "$filename" -PercentComplete $percent}
-                    Write-Verbose -Message "Working $filename"
+                    $sInputContainer = split-path -path $($_.path)
+                    If ($bDisableStatus -eq $False) {Write-Progress -Activity "Encoding: $iStep/$iSteps" -Status "$sFilename" -PercentComplete $iPercent}
+                    Write-Verbose -Message "Working $sFilename"
                 #Create new encode
                     ffmpeg -i "$($_.path)" -b $($_.T_Bits_Ps) -maxrate $($_.T_Bits_Ps) -minrate $($_.T_Bits_Ps) -ab 64k -vcodec libx264 -acodec aac -strict 2 -ac 2 -ar 44100 -s $($_.T_height) -map 0 -y -threads 2 -v quiet -stats $outputpath
                 #Check thar files still exist before removal
-                    $source = Test-Path $($_.path)
-                    $dest = Test-Path $outputpath
-                    if ($dest -eq $True -and $source -eq $True) {
+                    $sSourcePath = Test-Path $($_.path)
+                    $sDestPath = Test-Path $outputpath
+                    if ($sDestPath -eq $True -and $sSourcePath -eq $True) {
                         #Remove input file
                             remove-item $($_.path)
                         #Move new file to original folder
-                            move-item $outputpath -Destination $inputContainer
+                            move-item $outputpath -Destination $sInputContainer
                         #Populate log of encoded files
-                            $ts = Get-Date -Format "yyyy-MM-dd HH:mm"
-                            $log = $ts+" "+$basename+" encoded in "+$($_.T_height)+"p at "+($($_.T_Bits_Ps)/1000)+"kbp/s | Originally "+$($_.Bits_Ps)/1000+"kbp/s"
-                            write-output $log | add-content $sExportedDataPath\encode_log.txt
+                            $sTimeStamp = Get-Date -Format "yyyy-MM-dd HH:mm"
+                            $sLogStamp = $sTimeStamp+" "+$sBasename+" encoded in "+$($_.T_height)+"p at "+($($_.T_Bits_Ps)/1000)+"kbp/s | Originally "+$($_.Bits_Ps)/1000+"kbp/s"
+                            write-output $sLogStamp | add-content $sExportedDataPath\encode_log.txt
                             If ($bDisableStatus -eq $False) {
-                                $step++
+                                $iStep++
                             }
                             Write-Verbose -Message "Complete"
                     }
             }
-            If ($bDisableStatus -eq $False) {Write-Progress -Activity "Encoding: $step/$steps" -Status "$filename" -Completed}
+            If ($bDisableStatus -eq $False) {Write-Progress -Activity "Encoding: $iStep/$iSteps" -Status "$sFilename" -Completed}
         }
     }
 # End Fnctions
@@ -99,35 +99,35 @@ $sScriptPath = split-path -parent $MyInvocation.MyCommand.Definition # Gets the 
         #Begin scanning files
             If ($bDisableStatus -eq $False) {$activity = "Collecting Metadata from files"}
         #Start grabbing metadata based on contents
-            $steps = (get-content $sExportedDataPath\contents.txt).length
-            $step = 0
-            $percent = 0
+            $iSteps = (get-content $sExportedDataPath\contents.txt).length
+            $iStep = 0
+            $iPercent = 0
             $ffmpeg =@(
-                foreach($line in Get-Content $sExportedDataPath\contents.txt){
-                    If ($bDisableStatus -eq $False) {Write-Progress -Activity $activity -Status "Progress:" -PercentComplete $percent}
+                foreach($sContentsLine in Get-Content $sExportedDataPath\contents.txt){
+                    If ($bDisableStatus -eq $False) {Write-Progress -Activity $activity -Status "Progress:" -PercentComplete $iPercent}
                     #Check file folder and parent folder for ".skip" file to skip the encoding of these folders
-                        $filepath = Split-Path -Path $line
-                        $spath = $filepath + "\.skip"
-                        $parentpath = Split-path -Parent $line
-                        $pspath = $parentpath + "\.skip"
+                        $sFilePath = Split-Path -Path $sContentsLine
+                        $sSkipPath = $sFilePath + "\.skip"
+                        $sParentPath = Split-path -Parent $sContentsLine
+                        $sParentSkipPath = $sParentPath + "\.skip"
                     #If skip file not found in either path then get video metadata
-                        $ScanFile = $True # Reset ScanFile for each item in contents.txt
+                        $bScanFile = $True # Reset ScanFile for each item in contents.txt
 
                         If ($bTest -eq $False) {
-                            If ((Test-Path -Path $spath) -and (Test-Path -Path $pspath)) {$ScanFile = $False}
+                            If ((Test-Path -Path $sSkipPath) -and (Test-Path -Path $sParentSkipPath)) {$bScanFile = $False}
                         } # Checks if TestMode is enabled, if not then scans for skip file. If found scan of file is skipped
-                        If (Test-Path -Path $line -PathType Container) {$ScanFile = $False} # Checks if path is to folder
-                        If ($ScanFile -eq $True) {
+                        If (Test-Path -Path $sContentsLine -PathType Container) {$bScanFile = $False} # Checks if path is to folder
+                        If ($bScanFile -eq $True) {
                     #Video Metadata
-                        #$bits = ffprobe "$line" -v error -select_streams v:0  -show_entries stream_tags=BPS -of default=noprint_wrappers=1:nokey=1 #get the video kbps via tag (very accurate)
-                        $bits = ffprobe "$line" -v quiet -show_entries format=bit_rate -of default=noprint_wrappers=1:nokey=1 #if tag blank then get via format (less accurate)
-                        $height = ffprobe "$line"  -v quiet -select_streams v:0  -show_entries stream=height -of default=noprint_wrappers=1:nokey=1 # get video width
+                        #$iBits = ffprobe "$sContentsLine" -v error -select_streams v:0  -show_entries stream_tags=BPS -of default=noprint_wrappers=1:nokey=1 #get the video kbps via tag (very accurate)
+                        $iBits = ffprobe "$sContentsLine" -v quiet -show_entries format=bit_rate -of default=noprint_wrappers=1:nokey=1 #if tag blank then get via format (less accurate)
+                        $iHeight = ffprobe "$sContentsLine"  -v quiet -select_streams v:0  -show_entries stream=height -of default=noprint_wrappers=1:nokey=1 # get video width
                     
                         #logic for bps based on height
-                            if ([int]$height -le 480) {
+                            if ([int]$iHeight -le 480) {
                                 $kbps = 1000
                                 $theight = "640x480"
-                            }elseif ([int]$height -ge 1000) {
+                            }elseif ([int]$iHeight -ge 1000) {
                                 $kbps = 2500
                                 $theight = "1920x1080"
                             }else {
@@ -136,34 +136,34 @@ $sScriptPath = split-path -parent $MyInvocation.MyCommand.Definition # Gets the 
                             }
                     
                         #check if encoding needed
-                            $scale_bits = [int]$kbps*1000
-                            If($bTest -eq $True) {$encode = $True} ElseIf ([int]$bits -gt $scale_bits*1.3) {$encode = $True} else {
-                                $encode = $False
-                                Write-Verbose -Message "Encoding determined not needed for path - $line"
+                            $iScaleBits = [int]$kbps*1000
+                            If($bTest -eq $True) {$bEncode = $True} ElseIf ([int]$iBits -gt $iScaleBits*1.3) {$bEncode = $True} else {
+                                $bEncode = $False
+                                Write-Verbose -Message "Encoding determined not needed for path - $sContentsLine"
                             } #Check if bitrate is greater than target kbp/s if so mark for encode
                     
                         #Add data to array
                             If ($bTest -eq $True) {
                                 EncodeCSV
-                                Write-Verbose -Message "Adding to CSV as TestBool is True $line"
+                                Write-Verbose -Message "Adding to CSV as TestBool is True $sContentsLine"
                             } #Encode test path even if it doesnt need it
                             ElseIf ($bEncodeOnly -eq $True) {
                                 #If encode only is true, only import items needing encode into csv
-                                If ($encode -eq $True) {
+                                If ($bEncode -eq $True) {
                                     EncodeCSV
-                                    Write-Verbose -Message "Adding to CSV as Encode_Only is True - $line"
+                                    Write-Verbose -Message "Adding to CSV as Encode_Only is True - $sContentsLine"
                                 }
                             }Else {
                                 #If encode only is false, import all items into csv
                                 EncodeCSV
-                                Write-Verbose -Message "Adding to CSV as Encode_Only is False - $line"
+                                Write-Verbose -Message "Adding to CSV as Encode_Only is False - $sContentsLine"
                             }
 
                     }Else {
-                        Write-Verbose -Message "Skip file exists or path is folder, will not be added to CSV. Path - $line"
+                        Write-Verbose -Message "Skip file exists or path is folder, will not be added to CSV. Path - $sContentsLine"
                     }
-                    $step++
-                    $percent = ($step/$steps)*100
+                    $iStep++
+                    $iPercent = ($iStep/$iSteps)*100
                 }
             )
 #Export CSV
