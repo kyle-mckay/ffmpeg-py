@@ -30,14 +30,14 @@ Powershell script for how I scan media files and encode them with ffmpeg
 |--|--|--|--|
 |`Set-PSDebug -Off`| cmdlet |Not commented out|Turns script debugging features off, sets the trace level, and toggles strict mode.|
 |`$bVerbose`|Boolean|`= $True`|If `$True` verbose messages are enabled in the console while script is running.|
-|`$bTest`|Boolean|`= $False`|Enables or disables test mode. Test mode only scans and encodes a single path defined in `$bTestPath`|
-|`$bTestPath`|String|`= "D:\Testfile.mkv"`|Path to file you want to test the encoder on|
-|`$sRootPath`|String|`= "D:\"`|This is the root file path you want power-shell to begin scanning for media if you are wanting to scan all child items of this directory. *This becomes very important if you have `$bRecursiveSearch` set to `$False`*|
-|`$sEncodePath`|String|`= "$rootencode\Encode\"`|The new folder/path where you wish to remporarely store encodes while they are being processed|
-|`$sExportedDataPath`|String|`=  $sScriptPath`|Set the path where you want the exported files to be generated|
+|`$bTest`|Boolean|`= $False`|If `$True` Enables test mode. Test mode only scans and encodes a single source path defined in `$bTestPath`. Destination file is saved to your `$sExportedDataPath`.|
+|`$bTestPath`|String|`= "D:\Testfile.mkv"`|Source Path to file you want to test the script on.|
+|`$sRootPath`|String|`= "D:\"`|This is the root file path you want power-shell to begin scanning for media if you are wanting to scan all child items of this directory. *This becomes very important if you have `$bRecursiveSearch` set to `$False`*.|
+|`$sEncodePath`|String|`= "$rootencode\Encode\"`|The folder/path where you wish to remporarely store encodes while they are being processed. *It is recommended to use a different location from any other files.*|
+|`$sExportedDataPath`|String|`=  $sScriptPath`|The folder/path where you want the exported files to be generated. 'Exported files' does not include encodes.|
 |`$bRecursiveSearch`|Boolean|`=  $False`|This controls if you wish to scan the entire root folder specified in `$sRootPath` for content. If `$True`, all files, folders and subfolders will be subject to at least a scan attempt. If `$False`, only the folders indicated in `$sDirectoriesCSV` will be subject to a recursive scan.|
 |`$sDirectoriesCSV`|String|`= "D:\Anime\,D:\TV\,D:\Movies\"`|If you want to only have power-shell scan specific folders for media, you can indicate all paths in this variable using CSV style formatting.|
-|`$bDisableStatus`|Boolean|`= $True` |Set to true if you wish to disable the calculating and displaying of status/progress bars in the script (can increase performance)|
+|`$bDisableStatus`|Boolean|`= $True`|Set to true if you wish to disable the calculating and displaying of status/progress bars in the script (can increase performance)|
 |`$bEncodeOnly`|Boolean|`=  $True`|When this is `$True`, only items identified as "needing encode" as per the `Detect Medtadata > Video Metadata > Check if encoding needed` section. If `$False` then all items will be added to the CSV regardless if encoding will take place for the file or not. *This does not change whether or not the file **will** be encoded, only if it is logged in the generated CSV file*|
 |`$bDeleteCSV`|Boolean|`=  $False`|If `$False` then `contents.csv` will be deleted after the script is finished. If `$True` then `contents.csv` will **not** be deleted after the script is finished. Instead the next time it runs it will be written over.|
 |`$bAppendLog`|Boolean|`=  $True`|If `$False` then when a new encoding session begins, the contents of `Encode_Log.txt` are cleared. If `$True` then the contents of said text file will append until cleared manually.|

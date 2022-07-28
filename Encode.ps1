@@ -1,24 +1,24 @@
 $sScriptPath = split-path -parent $MyInvocation.MyCommand.Definition # Gets the path of the script file being executed
 #config
     # Initial Config
-    Set-PSDebug -Off
-    $bVerbose = $False
-    $bTest = $False # Enable this if you wish to run the current settings using a single file
-    $bTestPath = $sRootPath+"\Downloads\TestFile.mkv" # Path for file to test encode on
-    $sRootPath = "D:\" # Where you want to monitor video files for encode
-    $sEncodePath = "$sRootPath\Encode\" # Path or folder name where you would like your encodes to be stored while being created
-    $sExportedDataPath = $sScriptPath # Where you want your exported data to be stored
-    $bRecursiveSearch = $False # Set to false if you do not wish to scan the entire disk
-    $sDirectoriesCSV = "D:\Anime\,D:\TV\,D:\Movies\" # CSV of all directories you want scanned
-    $bDisableStatus = $True # Set to true if you wish to disable the calculating and displaying of status/progress bars in the script (can increase performance)
+        Set-PSDebug -Off
+        $bVerbose = $False # If `$True` verbose messages are enabled in the console while script is running.
+        $bTest = $False # If `$True` Enables test mode. Test mode only scans and encodes a single source path defined in `$bTestPath`. Destination file is saved to your `$sExportedDataPath`.
+        $bTestPath = $sRootPath+"\Downloads\TestFile.mkv" # Source Path to file you want to test the script on.
+        $sRootPath = "D:\" # This is the root file path you want power-shell to begin scanning for media if you are wanting to scan all child items of this directory. *This becomes very important if you have `$bRecursiveSearch` set to `$False`*.
+        $sEncodePath = "$sRootPath\Encode\" # The folder/path where you wish to remporarely store encodes while they are being processed. *It is recommended to use a different location from any other files.*
+        $sExportedDataPath = $sScriptPath # The folder/path where you want the exported files to be generated. 'Exported files' does not include encodes.
+        $bRecursiveSearch = $False # This controls if you wish to scan the entire root folder specified in `$sRootPath` for content. If `$True`, all files, folders and subfolders will be subject to at least a scan attempt. If `$False`, only the folders indicated in `$sDirectoriesCSV` will be subject to a recursive scan.
+        $sDirectoriesCSV = "D:\Anime\,D:\TV\,D:\Movies\" # If you want to only have power-shell scan specific folders for media, you can indicate all paths in this variable using CSV style formatting.
+        $bDisableStatus = $True # Set to true if you wish to disable the calculating and displaying of status/progress bars in the script (can increase performance)
     # Exported Data
-    $bEncodeOnly = $True # Sets output to only list items needing encode in final csv. If false all items will be added to the CSV regardless if encode will take place
-    $bDeleteCSV = $False # Set this value to true if you wish to delete contents.csv after encoding compelte
-    $bAppendLog = $True # Set this to true if you wish to append encode log data as new lines instead of starting fresh with each execution
-    $bDeleteContents = $True # Set this to true if you wish to keep the contents.txt file generated during initial scan
+        $bEncodeOnly = $True # When this is `$True`, only items identified as "needing encode" as per the `Detect Medtadata > Video Metadata > Check if encoding needed` section. If `$False` then all items will be added to the CSV regardless if encoding will take place for the file or not. *This does not change whether or not the file **will** be encoded, only if it is logged in the generated CSV file*
+        $bDeleteCSV = $False # If `$False` then `contents.csv` will be deleted after the script is finished. If `$True` then `contents.csv` will **not** be deleted after the script is finished. Instead the next time it runs it will be written over.
+        $bAppendLog = $True # If `$False` then when a new encoding session begins, the contents of `Encode_Log.txt` are cleared. If `$True` then the contents of said text file will append until cleared manually.
+        $bDeleteContents = $True # If `$False` then the `contents.txt` file generated at scanning will not be deleted after `contents.csv` is created. If `$True` then `contents.txt` will be deleted after `contents.csv` is created.
     # Encode Config
-    $bRemoveBeforeScan = $True # Set this value if you would like to delete all old media that may be left behind in the root encoding folder
-    $bEncodeAfterScan = $True # Set this value to true if you would like to becin encoding after contents.csv is generated
+        $bRemoveBeforeScan = $True # If `$True` then  all files in `$sEncodePath` are deleted prior to initiated a scan for media
+        $bEncodeAfterScan = $True # If `$False` then once the CSV is created the script skips the encoding process entirely. If `$True` then the script will encode all identified files after the CSV is generated.
 #Functions
     Function RemoveOldEnc {
         Remove-Item $sEncodePath -Include *.* -Recurse
@@ -51,7 +51,8 @@ $sScriptPath = split-path -parent $MyInvocation.MyCommand.Definition # Gets the 
                 #Collect file details
                     $filename = Get-ChildItem $($_.path)
                     $basename = $filename.BaseName #to get name only
-                    $outputpath = $sEncodePath+$basename+".mkv"
+                    If ($bTest -eq $True) {$outputpath = $sExportedDataPath+$basename+".mkv"} Else {$outputpath = $sEncodePath+$basename+".mkv"}
+                    
                     $inputContainer = split-path -path $($_.path)
                     If ($bDisableStatus -eq $False) {Write-Progress -Activity "Encoding: $step/$steps" -Status "$filename" -PercentComplete $percent}
                     Write-Verbose -Message "Working $filename"
