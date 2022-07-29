@@ -20,9 +20,6 @@ $sScriptPath = split-path -parent $MyInvocation.MyCommand.Definition # Gets the 
         $bRemoveBeforeScan = $True # If `$True` then  all files in `$sEncodePath` are deleted prior to initiated a scan for media
         $bEncodeAfterScan = $True # If `$False` then once the CSV is created the script skips the encoding process entirely. If `$True` then the script will encode all identified files after the CSV is generated.
 #Functions
-    Function RemoveOldEnc {
-        Remove-Item $sEncodePath -Include *.* -Recurse
-    }
     Function EncodeCSV {
         # Adds current scanned item to Encode.csv if it meets the requirements
         [pscustomobject]@{
@@ -41,20 +38,20 @@ $sScriptPath = split-path -parent $MyInvocation.MyCommand.Definition # Gets the 
         If ($bDisableStatus -eq $False) {
             $iSteps = (get-content $sExportedDataPath\contents.csv).length
             $iStep = 1
-        }
+        } # If bDisableStatus is False then updates the gui terminal with status bar
         #Loop through contents.csv and encode each file identified
             Import-Csv $sExportedDataPath\contents.csv | ForEach-Object {
             if ($($_.encode) -eq "TRUE") {
                 If ($bDisableStatus -eq $False) {
                     $iPercent = ($iStep/$iSteps)*100
-                }
+                } # If bDisableStatus is False then updates the gui terminal with status bar
                 #Collect file details
                     $sFilename = Get-ChildItem $($_.path)
                     $sBasename = $sFilename.BaseName #to get name only
                     If ($bTest -eq $True) {$outputpath = $sExportedDataPath+$sBasename+".mkv"} Else {$outputpath = $sEncodePath+$sBasename+".mkv"}
                     
                     $sInputContainer = split-path -path $($_.path)
-                    If ($bDisableStatus -eq $False) {Write-Progress -Activity "Encoding: $iStep/$iSteps" -Status "$sFilename" -PercentComplete $iPercent}
+                    If ($bDisableStatus -eq $False) {Write-Progress -Activity "Encoding: $iStep/$iSteps" -Status "$sFilename" -PercentComplete $iPercent} # If bDisableStatus is False then updates the gui terminal with status bar
                     Write-Verbose -Message "Working $sFilename"
                 #Create new encode
                     ffmpeg -i "$($_.path)" -b $($_.T_Bits_Ps) -maxrate $($_.T_Bits_Ps) -minrate $($_.T_Bits_Ps) -ab 64k -vcodec libx264 -acodec aac -strict 2 -ac 2 -ar 44100 -s $($_.T_height) -map 0 -y -threads 2 -v quiet -stats $outputpath
@@ -70,20 +67,18 @@ $sScriptPath = split-path -parent $MyInvocation.MyCommand.Definition # Gets the 
                             $sTimeStamp = Get-Date -Format "yyyy-MM-dd HH:mm"
                             $sLogStamp = $sTimeStamp+" "+$sBasename+" encoded in "+$($_.T_height)+"p at "+($($_.T_Bits_Ps)/1000)+"kbp/s | Originally "+$($_.Bits_Ps)/1000+"kbp/s"
                             write-output $sLogStamp | add-content $sExportedDataPath\encode_log.txt
-                            If ($bDisableStatus -eq $False) {
-                                $iStep++
-                            }
+                            If ($bDisableStatus -eq $False) {$iStep++} # If bDisableStatus is False then updates the gui terminal with status bar
                             Write-Verbose -Message "Complete"
                     }
             }
-            If ($bDisableStatus -eq $False) {Write-Progress -Activity "Encoding: $iStep/$iSteps" -Status "$sFilename" -Completed}
+            If ($bDisableStatus -eq $False) {Write-Progress -Activity "Encoding: $iStep/$iSteps" -Status "$sFilename" -Completed} # If bDisableStatus is False then updates the gui terminal with status bar
         }
     }
 # End Fnctions
 # Start Scanning
     Set-Location $sRootPath # set directory of root folder for monitored videos
     if ($bVerbose -eq $True) {$VerbosePreference = "Continue"} Else {$VerbosePreference = "SilentlyContinue"} # If verbose is on, shows verbose messages in console
-    If ($bRemoveBeforeScan -eq $True) {RemoveOldEnc} # Remove old encodes
+    If ($bRemoveBeforeScan -eq $True) {Remove-Item $sEncodePath -Include *.* -Recurse} # Remove old encodes
     #Generate Contents
         #Generate Contents Lists and repeat based on number of directories
         out-file $sExportedDataPath\contents.txt #create empty contents file
@@ -97,14 +92,14 @@ $sScriptPath = split-path -parent $MyInvocation.MyCommand.Definition # Gets the 
         }Else{Get-ChildItem -Path $sRootPath -Recurse -Include "*" | ForEach-Object {$_.FullName} | Write-Output | Add-Content $sExportedDataPath\contents.txt}
     #Detect Metadata
         #Begin scanning files
-            If ($bDisableStatus -eq $False) {$activity = "Collecting Metadata from files"}
+            If ($bDisableStatus -eq $False) {$activity = "Collecting Metadata from files"} # If bDisableStatus is False then updates the gui terminal with status bar
         #Start grabbing metadata based on contents
             $iSteps = (get-content $sExportedDataPath\contents.txt).length
             $iStep = 0
             $iPercent = 0
             $ffmpeg =@(
                 foreach($sContentsLine in Get-Content $sExportedDataPath\contents.txt){
-                    If ($bDisableStatus -eq $False) {Write-Progress -Activity $activity -Status "Progress:" -PercentComplete $iPercent}
+                    If ($bDisableStatus -eq $False) {Write-Progress -Activity $activity -Status "Progress:" -PercentComplete $iPercent} # If bDisableStatus is False then updates the gui terminal with status bar
                     #Check file folder and parent folder for ".skip" file to skip the encoding of these folders
                         $sFilePath = Split-Path -Path $sContentsLine
                         $sSkipPath = $sFilePath + "\.skip"
@@ -115,15 +110,15 @@ $sScriptPath = split-path -parent $MyInvocation.MyCommand.Definition # Gets the 
 
                         If ($bTest -eq $False) {
                             If ((Test-Path -Path $sSkipPath) -and (Test-Path -Path $sParentSkipPath)) {$bScanFile = $False}
-                        } # Checks if TestMode is enabled, if not then scans for skip file. If found scan of file is skipped
-                        If (Test-Path -Path $sContentsLine -PathType Container) {$bScanFile = $False} # Checks if path is to folder
+                        } # Runs if test mode is off - Looks for a .skip file in either the source directory or parent directy. If skip file is found, do not attempt to scan/encode file
+                        If (Test-Path -Path $sContentsLine -PathType Container) {$bScanFile = $False} # If path is to folder, do not attempt to scan/encode path
                         If ($bScanFile -eq $True) {
                     #Video Metadata
                         #$iBits = ffprobe "$sContentsLine" -v error -select_streams v:0  -show_entries stream_tags=BPS -of default=noprint_wrappers=1:nokey=1 #get the video kbps via tag (very accurate)
                         $iBits = ffprobe "$sContentsLine" -v quiet -show_entries format=bit_rate -of default=noprint_wrappers=1:nokey=1 #if tag blank then get via format (less accurate)
                         $iHeight = ffprobe "$sContentsLine"  -v quiet -select_streams v:0  -show_entries stream=height -of default=noprint_wrappers=1:nokey=1 # get video width
                     
-                        #logic for bps based on height
+                        # Logic for desired bitrate based on video height
                             if ([int]$iHeight -le 480) {
                                 $kbps = 1000
                                 $theight = "640x480"
@@ -135,40 +130,43 @@ $sScriptPath = split-path -parent $MyInvocation.MyCommand.Definition # Gets the 
                                 $theight = "1280x720"
                             }
                     
-                        #check if encoding needed
+                        # Check if encoding needed
                             $iScaleBits = [int]$kbps*1000
                             If($bTest -eq $True) {$bEncode = $True} ElseIf ([int]$iBits -gt $iScaleBits*1.3) {$bEncode = $True} else {
                                 $bEncode = $False
                                 Write-Verbose -Message "Encoding determined not needed for path - $sContentsLine"
-                            } #Check if bitrate is greater than target kbp/s if so mark for encode
+                            } # Check if bitrate is greater than target kbp/s if so mark for encode
                     
-                        #Add data to array
+                        # Add data to array
                             If ($bTest -eq $True) {
                                 EncodeCSV
-                                Write-Verbose -Message "Adding to CSV as TestBool is True $sContentsLine"
+                                Write-Verbose -Message "Adding to CSV as bTest is True $sContentsLine"
                             } #Encode test path even if it doesnt need it
                             ElseIf ($bEncodeOnly -eq $True) {
                                 #If encode only is true, only import items needing encode into csv
                                 If ($bEncode -eq $True) {
                                     EncodeCSV
-                                    Write-Verbose -Message "Adding to CSV as Encode_Only is True - $sContentsLine"
+                                    Write-Verbose -Message "Adding to CSV as bEncode is True - $sContentsLine"
                                 }
                             }Else {
                                 #If encode only is false, import all items into csv
                                 EncodeCSV
-                                Write-Verbose -Message "Adding to CSV as Encode_Only is False - $sContentsLine"
+                                Write-Verbose -Message "Adding to CSV as bEncode is False - $sContentsLine"
                             }
 
                     }Else {
-                        Write-Verbose -Message "Skip file exists or path is folder, will not be added to CSV. Path - $sContentsLine"
+                        Write-Verbose -Message "Skip file exists, or path is folder. Skipping - $sContentsLine"
                     }
-                    $iStep++
-                    $iPercent = ($iStep/$iSteps)*100
+                    If ($bDisableStatus -eq $False) {
+                        $iStep++
+                        $iPercent = ($iStep/$iSteps)*100
+                    } # If bDisableStatus is False then updates the gui terminal with status bar
+                    
                 }
             )
 #Export CSV
     $ffmpeg | Export-Csv -Path $sExportedDataPath\contents.csv #export array to csv
-    If ($bDisableStatus -eq $False) {Write-Progress -Activity $activity -Status "Ready" -Completed}        
+    If ($bDisableStatus -eq $False) {Write-Progress -Activity $activity -Status "Ready" -Completed} # If bDisableStatus is False then updates the gui terminal with status bar         
     If ($bDeleteContents -eq $True) {remove-item $sExportedDataPath\contents.txt}
     If ($bEncodeAfterScan -eq $True) {BeginEncode} #Begin video encode if turned on in config
     If ($bDeleteCSV -eq $True) {remove-item $sExportedDataPath\contents.csv} #Remove contents csv if marked true in config
