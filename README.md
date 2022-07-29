@@ -2,20 +2,22 @@
 # Table of Contents
 
 - [Table of Contents](#table-of-contents)
-- [ffmpreg](#ffmpreg)
+- [About powershell-ffmpeg](#about-powershell-ffmpeg)
   - [Requirements](#requirements)
   - [Simplified Script Flow](#simplified-script-flow)
   - [Config In Detail](#config-in-detail)
 
-# ffmpreg
+# About powershell-ffmpeg
 
-Powershell script for how I scan media files and encode them with ffmpeg
+This repo contains a script that i've put together using powersell as the base language. 
 
 ## Requirements
 
-- FFMPEG needs to be installed and configured to work with CLI in powershell
+- FFMPEG needs to be installed and configured to work with CLI in powershell.
 
-- Powershell (obviously)
+  - [How to install ffmpeg](https://gist.github.com/barbietunnie/47a3de3de3274956617ce092a3bc03a1) (Github)
+
+- Powershell
 
 ## Simplified Script Flow
 
