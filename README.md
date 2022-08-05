@@ -15,9 +15,13 @@ This repo contains a script that i've put together using powersell as the base l
 
 - FFMPEG needs to be installed and configured to work with CLI in powershell.
 
-  - [How to install ffmpeg](https://gist.github.com/barbietunnie/47a3de3de3274956617ce092a3bc03a1) (Github)
+  - [How to install ffmpeg](https://gist.github.com/barbietunnie/47a3de3de3274956617ce092a3bc03a1) (Github)   
 
-- Powershell
+- Powershell - it is availble in multiple operating systems including but not limited to:
+  - Windows 7, 8, 10
+  - Windows Server
+  - macOS
+  - Debian 9
 
 ## Simplified Script Flow
 
