@@ -75,10 +75,24 @@ $sScriptPath = split-path -parent $MyInvocation.MyCommand.Definition # Gets the 
         }
     }
 # End Fnctions
+Set-Location $sRootPath # set directory of root folder for monitored videos
+If ($bVerbose -eq $True) {$VerbosePreference = "Continue"} Else {$VerbosePreference = "SilentlyContinue"} # If verbose is on, shows verbose messages in console
+If ($bRemoveBeforeScan -eq $True) {Remove-Item $sEncodePath -Include *.* -Recurse} # Remove old encodes
+# Check folders before scanning
+    If ((Test-Path -Path $sRootPath -PathType Container) -eq $False) {
+        Write-Verbose -Message "Root Path not found, aborting script"
+        Exit
+    }Else{Write-Verbose -Message "Root path found"}
+    If ((Test-Path -Path $sEncodePath -PathType Container) -eq $False) {
+        Write-Verbose -Message "Encode Path not found, creating folder"
+        New-Item -ItemType "directory" -Path $sEncodePath
+        #Test path again
+        If ((Test-Path -Path $sEncodePath -PathType Container) -eq $False) {
+            Write-Verbose -Message "Failed to create folder, redirecting to root path"
+            $sEncodePath = $sRootPath
+        }
+    }Else{Write-Verbose -Message "Encode path found"}
 # Start Scanning
-    Set-Location $sRootPath # set directory of root folder for monitored videos
-    if ($bVerbose -eq $True) {$VerbosePreference = "Continue"} Else {$VerbosePreference = "SilentlyContinue"} # If verbose is on, shows verbose messages in console
-    If ($bRemoveBeforeScan -eq $True) {Remove-Item $sEncodePath -Include *.* -Recurse} # Remove old encodes
     #Generate Contents
         #Generate Contents Lists and repeat based on number of directories
         out-file $sExportedDataPath\contents.txt #create empty contents file
@@ -170,3 +184,4 @@ $sScriptPath = split-path -parent $MyInvocation.MyCommand.Definition # Gets the 
     If ($bDeleteContents -eq $True) {remove-item $sExportedDataPath\contents.txt}
     If ($bEncodeAfterScan -eq $True) {BeginEncode} #Begin video encode if turned on in config
     If ($bDeleteCSV -eq $True) {remove-item $sExportedDataPath\contents.csv} #Remove contents csv if marked true in config
+
