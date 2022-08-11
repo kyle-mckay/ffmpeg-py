@@ -59,4 +59,5 @@ When it come to configuring for use you may want to modify certain options depen
     # Encode Config
         $bRemoveBeforeScan = $True # If `$True` then  all files in `$sEncodePath` are deleted prior to initiated a scan for media
         $bEncodeAfterScan = $True # If `$False` then once the CSV is created the script skips the encoding process entirely. If `$True` then the script will encode all identified files after the CSV is generated.
+        $iThreads = 2 # The number of cpu threads you wish to dedicate to ffmpeg. 
 ```
