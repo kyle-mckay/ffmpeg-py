@@ -11,10 +11,6 @@
 
 This repo contains a script that i've put together using powersell as the base language. The main purpose of this script is to use [FFmpeg](https://ffmpeg.org/) to encode/convert/compress video files in media folders. This allows you to standardize file sizes throughout your media library, also enforcing maximum resolutions for longer term storage.
 
-## How I use this script
-
-I have a plex server set up where all the users in my household can stream and watch any of our stored TV shows, movies and anime. This script is set by my OS to run twice a day to scan media, and encode files if they are over a certain size/quality threshhold. By encoding needlessly large files it saves network resources when streaming the files, in addition to lessening the burdon of streaming on the server allowing for better overall streaming experience as well as allowing my home media server to run its other services with less interruption.
-
 ## Requirements
 
 - FFMPEG needs to be installed and configured to work with CLI in powershell.
@@ -26,6 +22,10 @@ I have a plex server set up where all the users in my household can stream and w
   - Windows Server
   - macOS
   - Debian 9
+
+## How I use this script
+
+I have a plex server set up where all the users in my household can stream and watch any of our stored TV shows, movies and anime. This script is set by my OS to run twice a day to scan media, and encode files if they are over a certain size/quality threshhold. By encoding needlessly large files it saves network resources when streaming the files, in addition to lessening the burdon of streaming on the server allowing for better overall streaming experience as well as allowing my home media server to run its other services with less interruption. This primarily goes after any media sources that are provided as either RAW or with low media compression.
 
 ## Simplified Script Flow
 
