@@ -20,6 +20,7 @@ $sScriptPath = split-path -parent $MyInvocation.MyCommand.Definition # Gets the 
     # Encode Config
         $bRemoveBeforeScan = $True # If `$True` then  all files in `$sEncodePath` are deleted prior to initiated a scan for media
         $bEncodeAfterScan = $True # If `$False` then once the CSV is created the script skips the encoding process entirely. If `$True` then the script will encode all identified files after the CSV is generated.
+        $iThreads = 2 # The number of cpu threads you wish to dedicate to ffmpeg. 
 #endregion
 #region Functions
     Function fScan{
@@ -162,7 +163,7 @@ $sScriptPath = split-path -parent $MyInvocation.MyCommand.Definition # Gets the 
                     If ($bDisableStatus -eq $False) {Write-Progress -Activity "Encoding: $iStep/$iSteps" -Status "$sFilename" -PercentComplete $iPercent} # If bDisableStatus is False then updates the gui terminal with status bar
                     Write-Verbose -Message "Working $sFilename"
                 #Create new encode
-                    ffmpeg -i "$($_.path)" -b $($_.T_Bits_Ps) -maxrate $($_.T_Bits_Ps) -minrate $($_.T_Bits_Ps) -ab 64k -vcodec libx264 -acodec aac -strict 2 -ac 2 -ar 44100 -s $($_.T_height) -map 0 -y -threads 2 -v quiet -stats $outputpath
+                    ffmpeg -i "$($_.path)" -b $($_.T_Bits_Ps) -maxrate $($_.T_Bits_Ps) -minrate $($_.T_Bits_Ps) -ab 64k -vcodec libx264 -acodec aac -strict 2 -ac 2 -ar 44100 -s $($_.T_height) -map 0 -y -threads $iThreads -v quiet -stats $outputpath
                 #Check thar files still exist before removal
                     $sSourcePath = Test-Path $($_.path)
                     $sDestPath = Test-Path $outputpath
