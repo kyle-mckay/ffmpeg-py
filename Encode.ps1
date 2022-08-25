@@ -165,9 +165,13 @@ $sScriptPath = split-path -parent $MyInvocation.MyCommand.Definition # Gets the 
                 #Create new encode
                     ffmpeg -i "$($_.path)" -b $($_.T_Bits_Ps) -maxrate $($_.T_Bits_Ps) -minrate $($_.T_Bits_Ps) -ab 64k -vcodec libx264 -acodec aac -strict 2 -ac 2 -ar 44100 -s $($_.T_height) -map 0 -y -threads $iThreads -v quiet -stats $outputpath
                 #Check thar files still exist before removal
-                    $sSourcePath = Test-Path $($_.path)
-                    $sDestPath = Test-Path $outputpath
-                    if ($sDestPath -eq $True -and $sSourcePath -eq $True) {
+                    $bSourcePath = Test-Path $($_.path)
+                    $bDestPath = Test-Path $outputpath
+                    $bDestSize = (((Get-Item $outputpath).Length/1MB) -gt 2) #Confirm new file has file size greater than 2MB
+                    Write-Verbose -Message "Source path exists = $bSourcePath"
+                    Write-Verbose -Message "Destination file exists = $bDestPath"
+                    Write-Verbose -Message "File size in good health = $bDestSize"
+                    if ($bDestPath -eq $True -and $bSourcePath -eq $True -and $bDestSize -eq $True) {
                         #Remove input file
                             remove-item $($_.path)
                         #Move new file to original folder
