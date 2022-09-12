@@ -1,4 +1,5 @@
 
+
 # Table of Contents
 
 - [Table of Contents](#table-of-contents)
@@ -7,9 +8,9 @@
   - [Simplified Script Flow](#simplified-script-flow)
   - [Config In Detail](#config-in-detail)
 
-# About ffmpeg-powershell
+# About ffmpeg-py
 
-This repo contains a script that i've put together using powersell as the base language. The main purpose of this script is to use [FFmpeg](https://ffmpeg.org/) to encode/convert/compress video files in media folders. This allows you to standardize file sizes throughout your media library, also enforcing maximum resolutions for longer term storage.
+>This repo contains a script that i've put together using powersell as the base language. The main purpose of this script is to use [FFmpeg](https://ffmpeg.org/) to encode/convert/compress video files in media folders. This allows you to standardize file sizes throughout your media library, also enforcing maximum resolutions for longer term storage.
 
 ## Requirements
 
@@ -17,26 +18,26 @@ This repo contains a script that i've put together using powersell as the base l
 
   - [How to install ffmpeg](https://gist.github.com/barbietunnie/47a3de3de3274956617ce092a3bc03a1) (Github)   
 
-- Powershell - it is availble in multiple operating systems including but not limited to:
-  - Windows 7, 8, 10
-  - Windows Server
-  - macOS
-  - Debian 9
+> - Powershell - it is availble in multiple operating systems including but not limited to:
+>   - Windows 7, 8, 10
+>   - Windows Server
+>   - macOS
+>   - Debian 9
 
 ## How I use this script
 
-I have a plex server set up where all the users in my household can stream and watch any of our stored TV shows, movies and anime. This script is set by my OS to run twice a day to scan media, and encode files if they are over a certain size/quality threshhold. By encoding needlessly large files it saves network resources when streaming the files, in addition to lessening the burdon of streaming on the server allowing for better overall streaming experience as well as allowing my home media server to run its other services with less interruption. This primarily goes after any media sources that are provided as either RAW or with low media compression.
+>I have a plex server set up where all the users in my household can stream and watch any of our stored TV shows, movies and anime. This script is set by my OS to run twice a day to scan media, and encode files if they are over a certain size/quality threshhold. By encoding needlessly large files it saves network resources when streaming the files, in addition to lessening the burdon of streaming on the server allowing for better overall streaming experience as well as allowing my home media server to run its other services with less interruption. This primarily goes after any media sources that are provided as either RAW or with low media compression.
 
 ## Simplified Script Flow
 
-1. Powershell begins scanning all indicated directories. Each file and folder under that path is added to contents.txt
-1. Powershell will begin scanning through each file individually, skipping folders, and and attempts to determine current bitrate, resolution and calculate if the file requires encoding when compared to presets. All files scanned are added to `contents.csv` with the scanned data based on configuration.
-1. When `contents.csv` is generated powershell will begin going through each line. If encoding is required it will begin the encode operation by passing through information to ffmpeg.
+1. Script begins scanning all indicated directories. Each file and folder under that path is added to contents.txt
+1. Script will begin scanning through each file individually, skipping folders, and and attempts to determine current bitrate, resolution and calculate if the file requires encoding when compared to presets. All files scanned are added to `contents.csv` with the scanned data based on configuration.
+1. When `contents.csv` is generated, script will begin going through each line. If encoding is required it will begin the encode operation by passing through information to ffmpeg.
 1. When the file encode is complete, it will delete the source file and move the new file to the same directory with the same naming convention.
 
 ## Configuration
 
-When it come to configuring for use you may want to modify certain options depending on your intented use. For example, I primarily use this script in the background through a scheduled task. As this is run automatically I do not need any GUI based items enabled so those would be set to false. A copy of the default configuration can be seen below.
+>When it come to configuring for use you may want to modify certain options depending on your intented use. For example, I primarily use this script in the background through a scheduled task. As this is run automatically I do not need any GUI based items enabled so those would be set to false. A copy of the default configuration can be seen below.
 
 ```powershell
     #Effects GUI console directly
