@@ -52,7 +52,7 @@ def vprint(args):
                 elif v == 3:
                     sTemp = "ERROR"
                 else:
-                    sTemp += ": " + v
+                    sTemp += ": " + str(v)
             print(sTemp)
         else:
             vprint([2, "Verbose initiated with first value being non-numeric"])
