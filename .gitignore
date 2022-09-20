@@ -3,3 +3,8 @@ contents.csv
 contents.txt
 encode_log.txt
 .skip
+config.py
+__pycache__/**
+contents.db
+sqltest.py
+test_database
