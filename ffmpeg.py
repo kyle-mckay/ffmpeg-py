@@ -39,6 +39,10 @@ def db_create():
     vprint([1, "Database created"])
     bExists()
 
+def export_log():
+    if bLogExist:
+        vprint([2,"This still need work"])
+
 
 def vprint(args):
     if verbose:
@@ -73,7 +77,7 @@ def db_remove_old():
     vprint([2,"This still needs work"])
 
 def db_wipe():
-    print([2,"This still need work"])
+    vprint([2,"This still need work"])
 
 def create_config():
     open(sConfigPath, 'x')
@@ -100,78 +104,139 @@ bRemoveBeforeScan = True # If `True` then  all files in `sEncodePath` are delete
 bEncodeAfterScan = True # If `False` then once the CSV is created the script skips the encoding process entirely. If `True` then the script will encode all identified files after the CSV is generated.\n\
 iThreads = 2 # The number of cpu threads you wish to dedicate to ffmpeg. ")
 
-def connecttodb():
+def db_connect():
+    # Purpose:
+    # Initiates connection to `contents.db` - this is an sqlite3 database that stores the details of encodable media in the scan directory
+    # This function does not disconnect or insert values on its own. To be used in conjuction with `def db_disconnect` and `def db_insertVaribleIntoTable` 
     global cursor, sqlite_insert_with_param, sqliteConnection
-    sqliteConnection = sqlite3.connect('contents.db')
-    cursor = sqliteConnection.cursor()
-    vprint([1,"Connected to SQLite"])
-
-    sqlite_insert_with_param = """INSERT INTO Disk_Content
-                        (Current_Bits, Pixel_Height, Target_Bits, Target_Height, Encode, Root_Path, File_Path) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?);"""
-def disconnectdb():
-    cursor.close()
-    if sqliteConnection:
+    try:
+        # Connect to database `contents.db` in execution folder
+        sqliteConnection = sqlite3.connect('contents.db')
+        cursor = sqliteConnection.cursor()
+        vprint([1,"Connected to SQLite"])
+        # Set insert parameters for table
+        sqlite_insert_with_param = """INSERT INTO Disk_Content
+                            (Current_Bits, Pixel_Height, Target_Bits, Target_Height, Encode, Root_Path, File_Path) 
+                            VALUES (?, ?, ?, ?, ?, ?, ?);"""
+    except Exception as e:
+        # print error if caught
+        vprint([3,e])
+        vprint([3,"Unable to connect to database"])
+def db_disconnect():
+    # Purpose:
+    # Terminates connection to `contents.db` - this is an sqlite3 database that stores the details of encodable media in the scan directory
+    # This function does not connect or insert values on its own. To be used in conjuction with `def db_connect` and `def db_insertVaribleIntoTable` 
+    try:
+        # Close connection to database
+        cursor.close()
+        if sqliteConnection:
             sqliteConnection.close()
             vprint([1,"The SQLite connection is closed"])
+    except Exception as e:
+        # print error if caught
+        vprint([3,e])
+        vprint([3,"Unable to close SQLite connection"])
 
-def insertVaribleIntoTable(Current_Bits, Pixel_Height, Target_Bits, Target_Height, Encode, Root_Path, File_Path):
+def db_insertVaribleIntoTable(Current_Bits, Pixel_Height, Target_Bits, Target_Height, Encode, Root_Path, File_Path):
+    # Purpose:
+    # Terminates connection to `contents.db` - this is an sqlite3 database that stores the details of encodable media in the scan directory
+    # This function does not connect or disconnect on its own. To be used in conjuction with `def db_connect` and `def db_disconnect` 
     try:
-
+        # Set tuple for new row in database
         data_tuple = (Current_Bits, Pixel_Height, Target_Bits, Target_Height, Encode, Root_Path, File_Path)
+        # Execute the row insertion
         cursor.execute(sqlite_insert_with_param, data_tuple)
+        # Commit changes made to database
         sqliteConnection.commit()
         vprint([1,f"File inserted successfully into Disk_Content table, {File_Path}"])
-
     except sqlite3.Error as error:
-        string = "UNIQUE constraint failed" 
-        if search(string, str(error)):
+        # print error if caught
+        # Look for string in error
+        #string = "UNIQUE constraint failed" 
+        if search("UNIQUE constraint failed" , str(error)):
+            # print notification if file is already in database
             vprint([1,f"File already in DB, skipping - {File_Path}"])
         else:
+            # print other unhandled errors
             vprint([3,f"Failed to insert Python variable into sqlite table, {error}"])
 
 def check_ignore(path):
+    # Purpose:
+    # Look in current folder of file and confirm if `.ignore` file is present. If it us, return True
+    # Also check parent directory
     vprint([2,'check_ignore requires building'])
     return False
 
+def check_complete(path):
+    # Purpose:
+    # Look in database for current file being scanned and identify if it has already been previously encoded
+    vprint([2,'check_complete requires building'])
+    return False
+
 def ffprobe_bits():
+    # Purpose:
+    # Utilize ffprobe to determine the number of bits per second of data in the video file
     vprint([2,'ffprobe_bits requires building'])
     return 100
 
 def ffprobe_height():
+    # Purpose:
+    # Utilize ffprobe to determine the current video resolution of scanned file
     vprint([2,'ffprobe_height requires building'])
     return 1080
 
-def calc_target_bits():
-    vprint([2,'calc_target_bits requires building'])
-    return 70
-
 def calc_target_height():
+    # Purpose:
+    # Calculate the target video height if outside the current range of desired resolution
     vprint([2,'calc_target_height requires building'])
     return 720
 
+def calc_target_bits():
+    # Purpose:
+    # Calculate the targate bits per second based on the video resolution
+    vprint([2,'calc_target_bits requires building'])
+    return 70
+
 def calc_encode():
+    # Purpose:
+    # Calculate whether or not the video needs encoding based off several other functions:
+    #   [def calc_target_bits, def calc_target_height, ffprobe_height, ffprobe_bits]
     vprint([2,'calc_encode requires building'])
     return True
 
-def db_scan_new():
-    # traverse root directory, and list directories as dirs and files as files
-    connecttodb()
-    vprint([2,'Need to add logic to change depending on if recursive search is enabled'])
-    for root, _, files in os.walk(config.sRootPath):
+def db_scan_new(ScanPath):
+    # Purpose:
+    # Traverse indicated root path and add all identifed files for encoding to database
+    # This call database connection and disconnect functions at beginning/end on its own. 
+    db_connect()
+    vprint([2,'Need to add logic to change depending on if recursive search is enabled. Assuming False']) 
+    # Walk through file directories in ScanPath
+    for root, _, files in os.walk(ScanPath):
         for file in files:
             # file returns the file name and extension
             fullpath = os.path.join(root,file) # join root folders for full path
             if check_ignore(fullpath):
+                # Checks if `.ignore` file is present in directory or parent directory of file
                 vprint([1,f'.ignore file detected for {fullpath}'])
             else:
-                Current_Bits = ffprobe_bits()
-                Pixel_Height = ffprobe_height()
-                Target_Bits = calc_target_bits()
-                Target_Height = calc_target_height()
-                if calc_encode():
-                    insertVaribleIntoTable(Current_Bits, Pixel_Height, Target_Bits, Target_Height, 1, config.sRootPath, fullpath)  
-    disconnectdb()
+                # if no `.ignore` file detected check the database if it has already been scanned to save other calculations
+                if check_complete(fullpath):
+                    vprint([1,f"Skipping previously scanned item - {fullpath}"])
+                else:
+                    # get file details and calculate encode settings
+                    Current_Bits = ffprobe_bits()
+                    Pixel_Height = ffprobe_height()
+                    Target_Bits = calc_target_bits()
+                    Target_Height = calc_target_height()
+                    if calc_encode():
+                        # If file needs encoding pass results to database
+                        db_insertVaribleIntoTable(Current_Bits, Pixel_Height, Target_Bits, Target_Height, 1, config.sRootPath, fullpath)
+                    else:
+                        vprint([1,f"file does not need to be encoded, requirements have been met - {fullpath}"])
+                        if config.bEncodeOnly == False:
+                            db_insertVaribleIntoTable(Current_Bits, Pixel_Height, Target_Bits, Target_Height, 0, config.sRootPath, fullpath)
+                            vprint([1,f"File has been added to database as `config.bEncodeOnly` == {config.bEncodeOnly}"])
+    db_disconnect()
 
 def fscan():
     global sRootPath, sEncodePath
@@ -235,7 +300,7 @@ def fscan():
             # identify new items
         # else
             db_wipe()
-        db_scan_new()
+        db_scan_new(sRootPath)
             # scan all items in path(s)
 
         
