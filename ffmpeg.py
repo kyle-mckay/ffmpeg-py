@@ -25,17 +25,26 @@ def bExists():
     bConfigExist = TestPath(sConfigPath)
     bDatabaseExist = TestPath(sDatabasePath)
 
+def db_init():
+    # Purpose: Initialize the global variables for cursor and connection
+    global cursor, sqliteConnection
+    try:
+        sqliteConnection = sqlite3.connect('contents.db')
+        cursor = sqliteConnection.cursor()
+    except Exception as e:
+        vprint([3,e])
+        vprint([2,"Unable to run db_init"])
 
 def db_create():
     import configparser
+    global cursor, sqliteConnection
     vprint([1, "Creating new SQLite3 database"])
-    connection = sqlite3.connect('contents.db')
-    cursor = connection.cursor()
+    db_init()
     cursor.execute('''CREATE TABLE IF NOT EXISTS Disk_Content
                 (Current_Bits INT, Pixel_Height TEXT, Target_Bits INT, Target_Height TEXT, Encode INT, Root_path TEXT, File_Path UNIQUE)''')
     
-    connection.commit()
-    connection.close()
+    sqliteConnection.commit()
+    sqliteConnection.close()
     vprint([1, "Database created"])
     bExists()
 
@@ -77,7 +86,16 @@ def db_remove_old():
     vprint([2,"This still needs work"])
 
 def db_wipe():
-    vprint([2,"This still need work"])
+    # Removes all paths in database without deleting the source file
+    global cursor, sqliteConnection
+    try:
+        db_init()
+        cursor.execute('DELETE FROM Disk_Content;',)
+        sqliteConnection.commit()
+    except Exception as e:
+        # print error if caught
+        vprint([3,e])
+        vprint([2,"Unable to remove rows from 'Disk_Content'"])
 
 def create_config():
     open(sConfigPath, 'x')
@@ -90,7 +108,7 @@ bDisableStatus = False # Set to true if you wish to disable the calculating and 
 sRootPath = '' # This is the root file path you want power-shell to begin scanning for media if you are wanting to scan all child items of this directory. *This becomes very important if you have `$bRecursiveSearch` set to `$False`*.\n\
 bTest = False # If `True` Enables test mode. Test mode only scans and encodes a single source path defined in `bTestPath`. Destination file is saved to your `sExportedDataPath`.\n\
 bTestPath = '' # Source Path to file you want to test the script on.\n\
-sEncodePath = sRootPath + '\Encode\' # The folder/path where you wish to remporarely store encodes while they are being processed. *It is recommended to use a different location from any other files.*\n\
+sEncodePath = sRootPath + '\Encode\' # The folder/path where you wish to temporarely store encodes while they are being processed. *It is recommended to use a different location from any other files.*\n\
 sExportedDataPath = '{sScriptPath}' # The folder/path where you want the exported files to be generated. 'Exported files' does not include encodes.\n\
 bRecursiveSearch = False # This controls if you wish to scan the entire root folder specified in `sRootPath` for content. If `True`, all files, folders and subfolders will be subject to at least a scan attempt. If `False`, only the folders indicated in `sDirectoriesCSV` will be subject to a recursive scan.\n\
 sDirectories = ['directory 1','directory 2','directory 3'] # If you want to only have power-shell scan specific folders for media, you can indicate all paths in this variable using CSV style formatting.\n\
@@ -114,10 +132,6 @@ def db_connect():
         sqliteConnection = sqlite3.connect('contents.db')
         cursor = sqliteConnection.cursor()
         vprint([1,"Connected to SQLite"])
-        # Set insert parameters for table
-        sqlite_insert_with_param = """INSERT INTO Disk_Content
-                            (Current_Bits, Pixel_Height, Target_Bits, Target_Height, Encode, Root_Path, File_Path) 
-                            VALUES (?, ?, ?, ?, ?, ?, ?);"""
     except Exception as e:
         # print error if caught
         vprint([3,e])
@@ -141,6 +155,7 @@ def db_insertVaribleIntoTable(Current_Bits, Pixel_Height, Target_Bits, Target_He
     # Purpose:
     # Terminates connection to `contents.db` - this is an sqlite3 database that stores the details of encodable media in the scan directory
     # This function does not connect or disconnect on its own. To be used in conjuction with `def db_connect` and `def db_disconnect` 
+    global sqlite_insert_with_param
     try:
         # Set tuple for new row in database
         data_tuple = (Current_Bits, Pixel_Height, Target_Bits, Target_Height, Encode, Root_Path, File_Path)
@@ -208,7 +223,12 @@ def db_scan_new(ScanPath):
     # Purpose:
     # Traverse indicated root path and add all identifed files for encoding to database
     # This call database connection and disconnect functions at beginning/end on its own. 
+    global sqlite_insert_with_param
     db_connect()
+    # Set insert parameters for table
+    sqlite_insert_with_param = """INSERT INTO Disk_Content
+                        (Current_Bits, Pixel_Height, Target_Bits, Target_Height, Encode, Root_Path, File_Path) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?);"""
     vprint([2,'Need to add logic to change depending on if recursive search is enabled. Assuming False']) 
     # Walk through file directories in ScanPath
     for root, _, files in os.walk(ScanPath):
@@ -296,9 +316,10 @@ def fscan():
         # Start Scanning
         if config.bDeleteDB == False:
             # if database is not set to overwrite mode
+            vprint([1,f"Database not set to overwrite as 'bDeleteDB' == False"])
             db_remove_old() # check if database contains path(s) different from sRootPath global variable
-            # identify new items
-        # else
+        else:
+            vprint([1,"Databse set to overwrite old data as 'bDeleteDB' == True"])
             db_wipe()
         db_scan_new(sRootPath)
             # scan all items in path(s)
